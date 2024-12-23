@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 
 @Slf4j
 @RestController
@@ -38,7 +39,7 @@ public class EmployeeController {
 
         //2、如果没有查询到则返回登录失败结果
         if(emp == null){
-            return R.error("登录失败");
+            return R.error("无此用户，登录失败");
         }
 
         //3、将页面提交的密码password进行md5加密处理
@@ -47,7 +48,7 @@ public class EmployeeController {
 
         //4、密码比对，如果不一致则返回登录失败结果
         if(!emp.getPassword().equals(password)){
-            return R.error("登录失败");
+            return R.error("密码错误，登录失败");
         }
 
         //5、查看员工状态，如果为已禁用状态，则返回员工已禁用结果
@@ -70,5 +71,21 @@ public class EmployeeController {
         //清理Session中保存的当前登录员工的id
         request.getSession().removeAttribute("employee");
         return R.success("退出成功");
+    }
+
+    @PostMapping
+    public  R<String> save(HttpServletRequest request,@RequestBody Employee employee){
+        log.info("新增员工信息{}",employee.toString());
+
+        employee.setPassword(DigestUtils.md5DigestAsHex("123456".getBytes()));
+        employee.setCreateTime(LocalDateTime.now());
+        employee.setUpdateTime(LocalDateTime.now());
+
+        Long empid =(Long) request.getSession().getAttribute("employee");
+        employee.setCreateUser(empid);
+        employee.setUpdateUser(empid);
+        employeeService.save(employee);
+
+        return R.success("新增员工成功");
     }
 }
